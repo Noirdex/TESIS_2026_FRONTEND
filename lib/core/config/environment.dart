@@ -7,7 +7,7 @@ class Environment {
   
   /// URLs de la API según el entorno
   static const String _devApiUrl = 'http://localhost:5000/api';
-  static const String _prodApiUrl = 'https://agendamiento-vr-api.onrender.com/api';
+  static const String _prodApiUrl = 'https://tesis-2026.onrender.com/api';
   
   /// Verifica si estamos en producción
   static bool get isProduction => _envKey == 'prod';
