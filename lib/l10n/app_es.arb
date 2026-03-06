@@ -1,0 +1,93 @@
+﻿{
+  "@@locale": "es",
+  "appTitle": "Agendamiento ITE VR",
+  "agendamientoTitulo": "Agendamiento ITE VR",
+  "menuProfile": "Perfil",
+  "menuBookings": "Reservas",
+  "menuSchedule": "Agendar",
+  "menuSettings": "Configuraciones",
+  "menuLogout": "Cerrar sesión",
+  "labelSede": "Sede",
+  "labelFacultad": "Facultad",
+  "labelCarrera": "Carrera",
+  "labelMateria": "Asignatura",
+  "labelLaboratorio": "Aula",
+  "labelSoftware": "Software para la clase",
+  "labelParalelo": "Paralelo",
+  "labelGrupo": "Grupo (1 o 2)",
+  "labelEstudiantes": "N.º de estudiantes (máx. 15)",
+  "labelCapacitacion": "¿Requiere capacitación?",
+  "calendarConfirmarTitulo": "Confirmar Agendamiento",
+  "calendarConfirmarMensaje": "Materia: {materia}\nParalelo: {paralelo}\nGrupo: {grupo}\nEstudiantes: {estudiantes}\nFecha: {fecha}\nHora: {hora}\nTipo: {tipo}",
+  "@calendarConfirmarMensaje": {
+    "description": "Mensaje para confirmar agendamiento con informaciÃ³n completa",
+    "placeholders": {
+      "materia": {},
+      "paralelo": {},
+      "grupo": {},
+      "estudiantes": {},
+      "fecha": {},
+      "hora": {},
+      "tipo": {}
+    }
+  },
+  "btnCancelar": "Cancelar",
+  "btnConfirmar": "Confirmar",
+  "confirmar": "Confirmar",
+  "cancelar": "Cancelar",
+  "tipoCapacitacion": "Capacitación",
+  "tipoPractica": "Práctica",
+  "footerTexto": "Â© 2025 Universidad CatÃ³lica de Cuenca Â· Soporte Â· Redes Sociales Â· Contacto",
+  "confirmarAgendamiento": "Confirmar Agendamiento",
+  "deseaAgendar": "Â¿Deseas agendar esta hora?",
+  "ocupado": "Ocupado",
+  "fecha": "Fecha",
+  "hora": "Hora",
+  "tipo": "Tipo",
+  "semanaDe": "Semana de",
+  "seleccioneIdioma": "Seleccionar idioma",
+  "idiomaEspanol": "Español",
+  "idiomaIngles": "Inglés",
+  "modoClaro": "Modo claro",
+  "modoOscuro": "Modo oscuro",
+  "carruselTitulo1": "Aula ITE VR 1",
+  "carruselDescripcion1": "InnovaciÃ³n educativa con experiencias inmersivas.",
+  "carruselTitulo2": "Explora en Realidad Virtual",
+  "carruselDescripcion2": "Clases complementarias con tecnologÃ­a de punta.",
+  "carruselTitulo3": "Transforma tu aprendizaje",
+  "carruselDescripcion3": "InteracciÃ³n visual y motriz para todas las carreras.",
+  "quienesSomos": "Â¿QuiÃ©nes Somos?",
+  "descripcionQuienesSomos": "Somos la Jefatura de InnovaciÃ³n y Emprendimiento de la Universidad CatÃ³lica de Cuenca, implementando aulas ITE para revolucionar la educaciÃ³n.",
+  "queHacemos": "Â¿QuÃ© Hacemos?",
+  "descripcionQueHacemos": "Operamos aulas ITE VR, usando realidad virtual para clases complementarias que ofrecen experiencias de aprendizaje inmersivas visuales y motrices.",
+  "btnAgendar": "Agendar Ahora",
+  "tituloAgendamientoDocente": "Ingrese los datos de la clase a dictar en el Aula",
+  "infoGrupos": "Las aulas se dividen en dos grupos para respetar el aforo máximo y mejorar la experiencia. Selecciona el grupo que deseas agendar.",
+  "infoCapacitacion": "Para usar el aula se prevé que el docente y los estudiantes estén capacitados en el uso del equipo.",
+  "infoCapacitacionContacto": "Si requieren capacitación, por favor contactarse con xxxx para coordinarla.",
+  "confirmoInfoGrupos": "Confirmo que comprendí por qué el aula se divide en dos grupos.",
+  "confirmoInfoCapacitacion": "Confirmo que docentes y estudiantes están capacitados o contactaré a xxxx para solicitarlo.",
+  "mensajeDebeConfirmarCapacitacion": "Debes confirmar la capacitación antes de seleccionar un horario.",
+  "laboratorioInfoTitulo": "Detalles del aula",
+  "laboratorioInfoUbicacion": "Ubicación: {ubicacion}",
+  "laboratorioInfoCapacidad": "Capacidad máxima: {capacidad} estudiantes",
+  "laboratorioInfoMaximo": "Aforo recomendado: {aforo}",
+  "@laboratorioInfoTitulo": {
+    "description": "Encabezado para la sección de detalles del aula"
+  },
+  "@laboratorioInfoUbicacion": {
+    "placeholders": {
+      "ubicacion": {}
+    }
+  },
+  "@laboratorioInfoCapacidad": {
+    "placeholders": {
+      "capacidad": {}
+    }
+  },
+  "@laboratorioInfoMaximo": {
+    "placeholders": {
+      "aforo": {}
+    }
+  }
+}

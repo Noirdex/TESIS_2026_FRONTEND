@@ -1,0 +1,93 @@
+﻿{
+  "@@locale": "en",
+  "appTitle": "ITE VR Scheduling",
+  "agendamientoTitulo": "ITE VR Scheduling",
+  "menuProfile": "Profile",
+  "menuBookings": "Bookings",
+  "menuSchedule": "Schedule",
+  "menuSettings": "Settings",
+  "menuLogout": "Logout",
+  "labelSede": "Campus",
+  "labelFacultad": "Faculty",
+  "labelCarrera": "Degree",
+  "labelMateria": "Course",
+  "labelLaboratorio": "Classroom",
+  "labelSoftware": "Class software",
+  "labelParalelo": "Section",
+  "labelGrupo": "Group (1 or 2)",
+  "labelEstudiantes": "No. of Students (max. 15)",
+  "labelCapacitacion": "Requires training?",
+  "calendarConfirmarTitulo": "Confirm Booking",
+  "calendarConfirmarMensaje": "Subject: {materia}\nSection: {paralelo}\nGroup: {grupo}\nStudents: {estudiantes}\nDate: {fecha}\nTime: {hora}\nType: {tipo}",
+  "@calendarConfirmarMensaje": {
+    "description": "Message to confirm booking with full info",
+    "placeholders": {
+      "materia": {},
+      "paralelo": {},
+      "grupo": {},
+      "estudiantes": {},
+      "fecha": {},
+      "hora": {},
+      "tipo": {}
+    }
+  },
+  "btnCancelar": "Cancel",
+  "btnConfirmar": "Confirm",
+  "confirmar": "Confirm",
+  "cancelar": "Cancel",
+  "tipoCapacitacion": "Training",
+  "tipoPractica": "Practice",
+  "footerTexto": "Â© 2025 Universidad CatÃ³lica de Cuenca Â· Support Â· Social Media Â· Contact",
+  "confirmarAgendamiento": "Confirm Booking",
+  "deseaAgendar": "Do you want to book this slot?",
+  "ocupado": "Busy",
+  "fecha": "Date",
+  "hora": "Time",
+  "tipo": "Type",
+  "semanaDe": "Week of",
+  "seleccioneIdioma": "Select language",
+  "idiomaEspanol": "Spanish",
+  "idiomaIngles": "English",
+  "modoClaro": "Light Mode",
+  "modoOscuro": "Dark Mode",
+  "carruselTitulo1": "ITE VR Classroom 1",
+  "carruselDescripcion1": "Educational innovation through immersive experiences.",
+  "carruselTitulo2": "Explore in Virtual Reality",
+  "carruselDescripcion2": "Complementary classes using cutting-edge technology.",
+  "carruselTitulo3": "Transform Your Learning",
+  "carruselDescripcion3": "Visual and motor interaction for all fields.",
+  "quienesSomos": "Who Are We",
+  "descripcionQuienesSomos": "We are the Innovation and Entrepreneurship Unit of Universidad CatÃ³lica de Cuenca, implementing ITE classrooms to revolutionize education.",
+  "queHacemos": "What We Do",
+  "descripcionQueHacemos": "We operate ITE VR classrooms, using virtual reality for complementary classes that offer immersive visual and motor learning experiences.",
+  "btnAgendar": "Schedule Now",
+  "tituloAgendamientoDocente": "Enter the class details to teach in the classroom",
+  "infoGrupos": "Classrooms are split into two groups to respect the capacity limits and provide the best experience. Choose the group you need to book.",
+  "infoCapacitacion": "Teachers and students are expected to be trained on how to use the classroom equipment.",
+  "infoCapacitacionContacto": "If training is required, please contact xxxx to coordinate it.",
+  "confirmoInfoGrupos": "I confirm I understand why the classroom is split into two groups.",
+  "confirmoInfoCapacitacion": "I confirm teachers and students are trained or I will contact xxxx if training is needed.",
+  "mensajeDebeConfirmarCapacitacion": "Please acknowledge the training requirement before selecting a time slot.",
+  "laboratorioInfoTitulo": "Classroom details",
+  "laboratorioInfoUbicacion": "Location: {ubicacion}",
+  "laboratorioInfoCapacidad": "Maximum capacity: {capacidad} students",
+  "laboratorioInfoMaximo": "Recommended occupancy: {aforo}",
+  "@laboratorioInfoTitulo": {
+    "description": "Header for classroom details"
+  },
+  "@laboratorioInfoUbicacion": {
+    "placeholders": {
+      "ubicacion": {}
+    }
+  },
+  "@laboratorioInfoCapacidad": {
+    "placeholders": {
+      "capacidad": {}
+    }
+  },
+  "@laboratorioInfoMaximo": {
+    "placeholders": {
+      "aforo": {}
+    }
+  }
+}
