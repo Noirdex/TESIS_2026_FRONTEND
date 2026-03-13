@@ -2,26 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/core.dart';
-
-/// Usuarios de prueba para demo
-class TestUser {
-  final String username;
-  final String password;
-  final String role;
-  final String name;
-
-  const TestUser({
-    required this.username,
-    required this.password,
-    required this.role,
-    required this.name,
-  });
-}
-
-const List<TestUser> testUsers = [
-  TestUser(username: 'docente', password: 'docente', role: 'teacher', name: 'Docente Demo'),
-  TestUser(username: 'admin1', password: 'admin1', role: 'admin', name: 'Admin Demo'),
-];
+import '../../core/services/auth_service.dart';
 
 /// Página de Login con diseño moderno
 class LoginPage extends StatefulWidget {
@@ -32,49 +13,48 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
   String? _errorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
+    _authService.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
     });
 
-    // Simular delay de autenticación
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-      
-      final user = testUsers.firstWhere(
-        (u) => u.username == _usernameController.text && u.password == _passwordController.text,
-        orElse: () => const TestUser(username: '', password: '', role: '', name: ''),
-      );
+    final result = await _authService.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
 
-      if (user.username.isNotEmpty) {
-        // Login exitoso
-        if (user.role == 'teacher') {
-          Navigator.pushReplacementNamed(context, '/teacher-scheduling');
-        } else if (user.role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin-scheduling');
-        }
-      } else {
-        setState(() {
-          _errorMessage = AppTranslations.get('invalid_credentials', 
-              context.read<LocaleProvider>().languageCode);
-          _isLoading = false;
-        });
+    if (!mounted) return;
+
+    if (result.isSuccess && result.user != null) {
+      final user = result.user!;
+      if (user.role == UserRole.teacher) {
+        Navigator.pushReplacementNamed(context, '/teacher-scheduling');
+      } else if (user.role == UserRole.admin || user.role == UserRole.superAdmin) {
+        Navigator.pushReplacementNamed(context, '/admin-scheduling');
       }
-    });
+    } else {
+      setState(() {
+        _errorMessage = result.error ?? AppTranslations.get('invalid_credentials', 
+            context.read<LocaleProvider>().languageCode);
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -339,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
           
           const SizedBox(height: 24),
           
-          // Demo mode info
+          // Info box
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -353,66 +333,25 @@ class _LoginPageState extends State<LoginPage> {
                     : const Color(0xFFBFDBFE),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  '${t.demoMode}:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark 
-                        ? AppColors.darkTextSecondary 
-                        : const Color(0xFF1E40AF),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  t.demoModeText,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark 
-                        ? AppColors.darkTextSecondary 
-                        : const Color(0xFF1E40AF),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Divider(
+                Icon(
+                  Icons.info_outline,
                   color: isDark 
-                      ? AppColors.darkBorder 
-                      : const Color(0xFFBFDBFE),
+                      ? AppColors.darkTextSecondary 
+                      : const Color(0xFF1E40AF),
+                  size: 20,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  t.testUsers,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark 
-                        ? AppColors.darkTextSecondary 
-                        : const Color(0xFF1E3A8A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '👨‍🏫 ${t.teacherUser}: docente / docente',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                    color: isDark 
-                        ? AppColors.darkTextMuted 
-                        : const Color(0xFF1E40AF),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '👨‍💼 ${t.adminUser}: admin1 / admin1',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                    color: isDark 
-                        ? AppColors.darkTextMuted 
-                        : const Color(0xFF1E40AF),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ingrese con su correo institucional y contraseña registrados en el sistema.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark 
+                          ? AppColors.darkTextSecondary 
+                          : const Color(0xFF1E40AF),
+                    ),
                   ),
                 ),
               ],
@@ -425,7 +364,7 @@ class _LoginPageState extends State<LoginPage> {
           AppTextField(
             label: t.institutionalEmail,
             hint: 'usuario@ucacue.edu.ec',
-            controller: _usernameController,
+            controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
           ),
