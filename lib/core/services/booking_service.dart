@@ -17,18 +17,26 @@ class BookingService {
   }) async {
     final queryParams = <String, String>{};
     
-    if (aulaId != null) queryParams['aulaId'] = aulaId;
-    if (teacherId != null) queryParams['teacherId'] = teacherId;
-    if (startDate != null) queryParams['startDate'] = startDate.toIso8601String();
-    if (endDate != null) queryParams['endDate'] = endDate.toIso8601String();
+    if (aulaId != null) queryParams['aula_id'] = aulaId;
+    if (teacherId != null) queryParams['user_id'] = teacherId;
+    if (startDate != null) queryParams['fecha_inicio'] = startDate.toIso8601String().split('T')[0];
+    if (endDate != null) queryParams['fecha_fin'] = endDate.toIso8601String().split('T')[0];
     if (status != null) queryParams['status'] = status.name;
     
     return _api.get<List<Booking>>(
-      '/bookings',
+      '/agendas',
       queryParams: queryParams.isNotEmpty ? queryParams : null,
       fromJson: (json) {
-        final list = json as List;
-        return list.map((item) => Booking.fromJson(item)).toList();
+        // Backend returns {agendas: [...], total, pages, current_page}
+        if (json is Map && json.containsKey('agendas')) {
+          final list = json['agendas'] as List;
+          return list.map((item) => Booking.fromJson(item)).toList();
+        }
+        // Fallback if it's a direct list
+        if (json is List) {
+          return json.map((item) => Booking.fromJson(item)).toList();
+        }
+        return <Booking>[];
       },
     );
   }
@@ -80,7 +88,7 @@ class BookingService {
     }
     
     return _api.post<Booking>(
-      '/bookings',
+      '/agendas',
       body: {
         'aulaId': aulaId,
         'teacherId': teacherId,

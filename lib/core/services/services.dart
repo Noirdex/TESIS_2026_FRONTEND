@@ -7,3 +7,4 @@ export 'booking_service.dart';
 export 'teacher_service.dart';
 export 'aula_service.dart';
 export 'image_upload_service.dart';
+export 'landing_service.dart';

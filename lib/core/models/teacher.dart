@@ -70,22 +70,23 @@ class Teacher extends User {
   }
 
   factory Teacher.fromJson(Map<String, dynamic> json) {
+    // Handle both snake_case (backend) and camelCase (frontend) formats
     return Teacher(
-      id: json['id'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      email: json['email'] as String,
+      id: (json['id'] ?? '').toString(),
+      firstName: (json['firstName'] ?? json['first_name'] ?? '') as String,
+      lastName: (json['lastName'] ?? json['last_name'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
       phone: json['phone'] as String?,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt'] as String)
+      createdAt: (json['createdAt'] ?? json['created_at']) != null 
+          ? DateTime.parse((json['createdAt'] ?? json['created_at']) as String)
           : null,
       position: json['position'] as String?,
       faculty: json['faculty'] as String?,
       career: json['career'] as String?,
       subject: json['subject'] as String?,
-      hasTraining: json['hasTraining'] as bool? ?? false,
-      trainingDate: json['trainingDate'] != null 
-          ? DateTime.parse(json['trainingDate'] as String)
+      hasTraining: (json['hasTraining'] ?? json['has_training']) as bool? ?? false,
+      trainingDate: (json['trainingDate'] ?? json['training_date']) != null 
+          ? DateTime.parse((json['trainingDate'] ?? json['training_date']) as String)
           : null,
     );
   }

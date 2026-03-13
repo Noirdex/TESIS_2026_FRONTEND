@@ -19,14 +19,22 @@ class TeacherService {
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
     if (career != null) queryParams['career'] = career;
     if (faculty != null) queryParams['faculty'] = faculty;
-    if (hasTraining != null) queryParams['hasTraining'] = hasTraining.toString();
+    if (hasTraining != null) queryParams['has_training'] = hasTraining.toString();
     
     return _api.get<List<Teacher>>(
-      '/teachers',
+      '/docentes',
       queryParams: queryParams.isNotEmpty ? queryParams : null,
       fromJson: (json) {
-        final list = json as List;
-        return list.map((item) => Teacher.fromJson(item)).toList();
+        // Backend returns {docentes: [...], total, pages, current_page}
+        if (json is Map && json.containsKey('docentes')) {
+          final list = json['docentes'] as List;
+          return list.map((item) => Teacher.fromJson(item)).toList();
+        }
+        // Fallback if it's a direct list
+        if (json is List) {
+          return json.map((item) => Teacher.fromJson(item)).toList();
+        }
+        return <Teacher>[];
       },
     );
   }
@@ -34,7 +42,7 @@ class TeacherService {
   /// Obtiene un docente por ID
   Future<ApiResponse<Teacher>> getTeacher(String id) async {
     return _api.get<Teacher>(
-      '/teachers/$id',
+      '/docentes/$id',
       fromJson: (json) => Teacher.fromJson(json),
     );
   }
@@ -42,7 +50,7 @@ class TeacherService {
   /// Obtiene docente por email
   Future<ApiResponse<Teacher>> getTeacherByEmail(String email) async {
     return _api.get<Teacher>(
-      '/teachers/by-email/$email',
+      '/docentes/by-email/$email',
       fromJson: (json) => Teacher.fromJson(json),
     );
   }
@@ -69,7 +77,7 @@ class TeacherService {
     }
     
     return _api.post<Teacher>(
-      '/teachers',
+      '/docentes',
       body: {
         'firstName': firstName,
         'lastName': lastName,

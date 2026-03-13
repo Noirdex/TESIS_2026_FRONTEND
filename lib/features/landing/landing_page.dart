@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../core/core.dart';
+import '../../core/services/landing_service.dart';
 
 /// Landing Page principal con diseño moderno
 class LandingPage extends StatefulWidget {
@@ -16,9 +17,19 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   int _currentCarouselIndex = 0;
+  
+  late final LandingService _landingService;
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  // Carousel slides data
-  final List<Map<String, String>> _slides = [
+  // Datos del carrusel (cargados desde API)
+  List<Map<String, String>> _slides = [];
+  
+  // Datos de equipos VR (cargados desde API)
+  List<Map<String, dynamic>> _vrHeadsets = [];
+
+  // Datos de fallback si la API no responde
+  static const List<Map<String, String>> _defaultSlides = [
     {
       'title': 'Aula de Realidad Virtual',
       'description': 'Tecnología de vanguardia para experiencias inmersivas de aprendizaje',
@@ -36,8 +47,7 @@ class _LandingPageState extends State<LandingPage> {
     },
   ];
 
-  // VR Headsets data
-  final List<Map<String, dynamic>> _vrHeadsets = [
+  static const List<Map<String, dynamic>> _defaultVrHeadsets = [
     {
       'name': 'Meta Quest 3',
       'description': 'La última generación de VR con gráficos mejorados y realidad mixta',
@@ -75,6 +85,67 @@ class _LandingPageState extends State<LandingPage> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _landingService = LandingService();
+    _loadLandingContent();
+  }
+
+  @override
+  void dispose() {
+    _landingService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadLandingContent() async {
+    try {
+      final content = await _landingService.getAllContent();
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          
+          // Cargar slides desde API o usar defaults
+          if (content.hasSlides) {
+            _slides = content.slides.map((s) => {
+              'title': (s['titulo'] ?? s['title'] ?? '') as String,
+              'description': (s['descripcion'] ?? s['description'] ?? '') as String,
+              'image': (s['imagen_url'] ?? s['image'] ?? '') as String,
+            }).toList();
+          } else {
+            _slides = List.from(_defaultSlides);
+          }
+          
+          // Cargar equipos VR desde API o usar defaults
+          if (content.hasFeatures) {
+            _vrHeadsets = content.features.map((f) => {
+              'name': f['nombre'] ?? f['name'] ?? '',
+              'description': f['descripcion'] ?? f['description'] ?? '',
+              'image': f['imagen_url'] ?? f['image'] ?? '',
+              'specs': (f['especificaciones'] ?? f['specs'] ?? []) is List 
+                  ? List<String>.from(f['especificaciones'] ?? f['specs'] ?? [])
+                  : <String>[],
+              'count': f['cantidad'] ?? f['count'] ?? 1,
+            }).toList();
+          } else {
+            _vrHeadsets = List.from(_defaultVrHeadsets);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+          // Usar datos por defecto en caso de error
+          _slides = List.from(_defaultSlides);
+          _vrHeadsets = List.from(_defaultVrHeadsets);
+        });
+      }
+    }
+  }
+
   void _navigateToLogin() {
     Navigator.pushNamed(context, '/login');
   }
@@ -84,6 +155,16 @@ class _LandingPageState extends State<LandingPage> {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final lang = context.watch<LocaleProvider>().languageCode;
     final t = AppTranslations.of(lang);
+    
+    // Si aún está cargando y no hay datos de fallback, mostrar indicador
+    if (_isLoading && _slides.isEmpty) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.ucRed),
+        ),
+      );
+    }
     
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,

@@ -112,31 +112,41 @@ class Aula {
   }
 
   factory Aula.fromJson(Map<String, dynamic> json) {
+    // Handle backend snake_case format (horario_inicio/horario_fin) or frontend format (schedule)
+    String schedule = '';
+    if (json.containsKey('schedule')) {
+      schedule = json['schedule'] as String? ?? '7:00 - 17:00';
+    } else {
+      final horarioInicio = json['horario_inicio']?.toString() ?? '07:00';
+      final horarioFin = json['horario_fin']?.toString() ?? '17:00';
+      schedule = '$horarioInicio - $horarioFin';
+    }
+    
     return Aula(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      location: json['location'] as String,
-      capacity: json['capacity'] as int,
-      schedule: json['schedule'] as String,
-      lunchBreak: json['lunchBreak'] as String?,
-      availableDays: (json['availableDays'] as List<dynamic>?)
+      id: (json['id'] ?? json['id_aula'] ?? '').toString(),
+      name: (json['name'] ?? json['nombre'] ?? '') as String,
+      location: (json['location'] ?? json['ubicacion'] ?? '') as String,
+      capacity: (json['capacity'] ?? json['capacidad'] ?? 15) as int,
+      schedule: schedule,
+      lunchBreak: json['lunchBreak'] ?? json['almuerzo'] as String?,
+      availableDays: (json['availableDays'] ?? json['dias_disponibles'] as List<dynamic>?)
           ?.map((e) => e as int).toList() ?? [1, 2, 3, 4, 5],
-      imageUrl: json['imageUrl'] as String?,
+      imageUrl: (json['imageUrl'] ?? json['foto_url']) as String?,
       mapUrl: json['mapUrl'] as String?,
-      latitude: json['latitude'] as double?,
-      longitude: json['longitude'] as double?,
-      isActive: json['isActive'] as bool? ?? true,
-      description: json['description'] as String?,
-      technicianId: json['technicianId'] as String?,
+      latitude: (json['latitude'] ?? json['latitud']) as double?,
+      longitude: (json['longitude'] ?? json['longitud']) as double?,
+      isActive: (json['isActive'] ?? json['is_active']) as bool? ?? true,
+      description: (json['description'] ?? json['descripcion']) as String?,
+      technicianId: json['technicianId']?.toString() ?? json['id_tecnico']?.toString(),
       technicianName: json['technicianName'] as String?,
       technicianEmail: json['technicianEmail'] as String?,
       technicianPhone: json['technicianPhone'] as String?,
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt'] as String)
-          : null,
+          : (json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null),
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+          : (json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null),
     );
   }
   

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/core.dart';
+import '../../../core/services/services.dart';
 import 'aula_selector.dart';
 import 'weekly_calendar.dart';
 
@@ -31,6 +32,15 @@ class ScheduleView extends StatefulWidget {
 }
 
 class _ScheduleViewState extends State<ScheduleView> {
+  // Services
+  late final AulaService _aulaService;
+  late final TeacherService _teacherService;
+  
+  // Loading states
+  bool _isLoadingTeachers = true;
+  bool _isLoadingAulas = true;
+  String? _errorMessage;
+  
   // Step states
   bool _step1Collapsed = false;
   bool _step2Collapsed = false;
@@ -49,13 +59,17 @@ class _ScheduleViewState extends State<ScheduleView> {
   
   // Schedule selection
   final Set<String> _selectedCells = {};
-  final Map<int, Set<String>> _groupCells = {}; // Mapa de grupo -> celdas seleccionadas
-  int _activeGroup = 1; // Grupo activo (1, 2, 3, ...)
-  int _totalGroups = 1; // Número total de grupos necesarios
+  final Map<int, Set<String>> _groupCells = {};
+  int _activeGroup = 1;
+  int _totalGroups = 1;
   bool _needsGroups = false;
 
-  // Mock teachers - ahora con hasTraining para indicar si están capacitados
-  final List<Map<String, dynamic>> _teachers = [
+  // Datos cargados desde API (o fallback)
+  List<Map<String, dynamic>> _teachers = [];
+  List<Map<String, dynamic>> _aulas = [];
+  
+  // Datos de fallback si la API no responde
+  static const List<Map<String, dynamic>> _defaultTeachers = [
     {
       'id': '1',
       'firstName': 'Juan',
@@ -63,7 +77,7 @@ class _ScheduleViewState extends State<ScheduleView> {
       'email': 'juan.perez@ucacue.edu.ec',
       'faculty': 'Ingeniería',
       'career': 'Sistemas',
-      'hasTraining': true, // CAPACITADO - puede agendar
+      'hasTraining': true,
     },
     {
       'id': '2',
@@ -72,7 +86,7 @@ class _ScheduleViewState extends State<ScheduleView> {
       'email': 'maria.garcia@ucacue.edu.ec',
       'faculty': 'Medicina',
       'career': 'Medicina General',
-      'hasTraining': false, // NO CAPACITADO - no puede agendar
+      'hasTraining': false,
     },
     {
       'id': '3',
@@ -81,7 +95,34 @@ class _ScheduleViewState extends State<ScheduleView> {
       'email': 'carlos.lopez@ucacue.edu.ec',
       'faculty': 'Arquitectura',
       'career': 'Arquitectura',
-      'hasTraining': true, // CAPACITADO - puede agendar
+      'hasTraining': true,
+    },
+  ];
+  
+  static const List<Map<String, dynamic>> _defaultAulas = [
+    {
+      'id': 1,
+      'name': 'Aula VR 1',
+      'location': 'Cuenca · Facultad de Ingenierías',
+      'capacity': 10,
+      'schedule': '7:00 - 16:00',
+      'image': 'https://images.unsplash.com/photo-1617802690658-1173a812650d?w=600&h=400&fit=crop',
+    },
+    {
+      'id': 2,
+      'name': 'Aula VR 2',
+      'location': 'Cuenca · Facultad de Medicina',
+      'capacity': 15,
+      'schedule': '7:00 - 12:00, 13:00 - 18:00',
+      'image': 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=600&h=400&fit=crop',
+    },
+    {
+      'id': 3,
+      'name': 'Aula VR 3',
+      'location': 'Azogues · Campus Norte',
+      'capacity': 12,
+      'schedule': '8:00 - 17:00',
+      'image': 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=600&h=400&fit=crop',
     },
   ];
   
@@ -89,7 +130,7 @@ class _ScheduleViewState extends State<ScheduleView> {
   Map<String, dynamic>? get _selectedTeacher {
     if (_selectedTeacherId.isEmpty) return null;
     return _teachers.firstWhere(
-      (t) => t['id'] == _selectedTeacherId,
+      (t) => t['id'].toString() == _selectedTeacherId,
       orElse: () => <String, dynamic>{},
     );
   }
@@ -100,31 +141,6 @@ class _ScheduleViewState extends State<ScheduleView> {
     if (teacher == null || teacher.isEmpty) return false;
     return teacher['hasTraining'] == true;
   }
-
-  // Mock aulas
-  final List<Map<String, dynamic>> _aulas = [
-    {
-      'name': 'Aula VR 1',
-      'location': 'Cuenca · Facultad de Ingenierías',
-      'capacity': 10,
-      'schedule': '7:00 - 16:00',
-      'image': 'https://images.unsplash.com/photo-1617802690658-1173a812650d?w=600&h=400&fit=crop',
-    },
-    {
-      'name': 'Aula VR 2',
-      'location': 'Cuenca · Facultad de Medicina',
-      'capacity': 15,
-      'schedule': '7:00 - 12:00, 13:00 - 18:00',
-      'image': 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=600&h=400&fit=crop',
-    },
-    {
-      'name': 'Aula VR 3',
-      'location': 'Azogues · Campus Norte',
-      'capacity': 12,
-      'schedule': '8:00 - 17:00',
-      'image': 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=600&h=400&fit=crop',
-    },
-  ];
 
   // Solo puede continuar si el docente seleccionado está capacitado
   bool get _canProceedToStep2 => _selectedTeacherId.isNotEmpty && _isSelectedTeacherTrained;
@@ -139,7 +155,78 @@ class _ScheduleViewState extends State<ScheduleView> {
   @override
   void initState() {
     super.initState();
+    _aulaService = AulaService();
+    _teacherService = TeacherService();
     _numStudentsController.addListener(_checkGroupsNeeded);
+    _loadData();
+  }
+  
+  Future<void> _loadData() async {
+    await Future.wait([
+      _loadTeachers(),
+      _loadAulas(),
+    ]);
+  }
+  
+  Future<void> _loadTeachers() async {
+    try {
+      final response = await _teacherService.getTeachers();
+      if (mounted) {
+        setState(() {
+          _isLoadingTeachers = false;
+          if (response.isSuccess && response.data != null && response.data!.isNotEmpty) {
+            _teachers = response.data!.map((t) => {
+              'id': t.id.toString(),
+              'firstName': t.firstName,
+              'lastName': t.lastName,
+              'email': t.email,
+              'faculty': t.faculty ?? '',
+              'career': t.career ?? '',
+              'hasTraining': t.hasTraining,
+            }).toList();
+          } else {
+            _teachers = List.from(_defaultTeachers);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingTeachers = false;
+          _teachers = List.from(_defaultTeachers);
+        });
+      }
+    }
+  }
+  
+  Future<void> _loadAulas() async {
+    try {
+      final response = await _aulaService.getAulas();
+      if (mounted) {
+        setState(() {
+          _isLoadingAulas = false;
+          if (response.isSuccess && response.data != null && response.data!.isNotEmpty) {
+            _aulas = response.data!.map((a) => {
+              'id': a.id,
+              'name': a.name,
+              'location': a.location,
+              'capacity': a.capacity,
+              'schedule': a.schedule,
+              'image': a.imageUrl ?? 'https://images.unsplash.com/photo-1617802690658-1173a812650d?w=600&h=400&fit=crop',
+            }).toList();
+          } else {
+            _aulas = List.from(_defaultAulas);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAulas = false;
+          _aulas = List.from(_defaultAulas);
+        });
+      }
+    }
   }
 
   void _checkGroupsNeeded() {
@@ -200,6 +287,8 @@ class _ScheduleViewState extends State<ScheduleView> {
     _parallelController.dispose();
     _cycleController.dispose();
     _numStudentsController.dispose();
+    _aulaService.dispose();
+    _teacherService.dispose();
     super.dispose();
   }
 
@@ -491,6 +580,23 @@ class _ScheduleViewState extends State<ScheduleView> {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final lang = context.watch<LocaleProvider>().languageCode;
     final t = AppTranslations.of(lang);
+    
+    // Mostrar loading mientras se cargan los datos
+    if (_isLoadingTeachers || _isLoadingAulas) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.ucRed),
+              SizedBox(height: 16),
+              Text('Cargando datos...'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Column(
       children: [

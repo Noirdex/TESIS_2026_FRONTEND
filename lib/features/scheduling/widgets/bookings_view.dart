@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/core.dart';
+import '../../../core/services/services.dart';
 
 /// Vista de agendas/reservas
 class BookingsView extends StatefulWidget {
@@ -15,11 +16,21 @@ class BookingsView extends StatefulWidget {
 }
 
 class _BookingsViewState extends State<BookingsView> {
+  // Service
+  late final BookingService _bookingService;
+  
+  // Loading state
+  bool _isLoading = true;
+  String? _errorMessage;
+  
   // Filtro de estado
   String _statusFilter = 'all'; // 'all', 'active', 'cancelled'
   
-  // Mock bookings data - ahora usando objetos Booking
-  final List<Booking> _bookings = [
+  // Datos cargados desde API (o fallback)
+  List<Booking> _bookings = [];
+  
+  // Datos de fallback si la API no responde
+  static final List<Booking> _defaultBookings = [
     Booking(
       id: '1',
       teacherId: '1',
@@ -66,7 +77,6 @@ class _BookingsViewState extends State<BookingsView> {
       endHour: 11,
       status: BookingStatus.active,
     ),
-    // Ejemplo de reserva cancelada
     Booking(
       id: '3',
       teacherId: '3',
@@ -91,6 +101,48 @@ class _BookingsViewState extends State<BookingsView> {
   ];
 
   final Set<String> _selectedBookings = {};
+  
+  @override
+  void initState() {
+    super.initState();
+    _bookingService = BookingService();
+    _loadBookings();
+  }
+  
+  @override
+  void dispose() {
+    _bookingService.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _loadBookings() async {
+    try {
+      final response = await _bookingService.getBookings();
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (response.isSuccess && response.data != null && response.data!.isNotEmpty) {
+            _bookings = response.data!;
+          } else {
+            _bookings = List.from(_defaultBookings);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+          _bookings = List.from(_defaultBookings);
+        });
+      }
+    }
+  }
+  
+  Future<void> _refreshBookings() async {
+    setState(() => _isLoading = true);
+    await _loadBookings();
+  }
 
   List<Booking> get _filteredBookings {
     if (_statusFilter == 'all') return _bookings;
@@ -110,6 +162,23 @@ class _BookingsViewState extends State<BookingsView> {
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final isSpanish = context.watch<LocaleProvider>().isSpanish;
+    
+    // Mostrar loading mientras se cargan los datos
+    if (_isLoading) {
+      return const AppCard(
+        padding: EdgeInsets.all(48),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.ucRed),
+              SizedBox(height: 16),
+              Text('Cargando reservas...'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return AppCard(
       padding: const EdgeInsets.all(24),
@@ -941,7 +1010,7 @@ class _BookingsViewState extends State<BookingsView> {
   }
 
   void _handleEditBooking(Booking booking) async {
-    // Lista de docentes disponibles (mock)
+    // Lista de docentes disponibles (cargar desde servicio si es posible)
     final availableTeachers = [
       {'id': '1', 'firstName': 'Juan', 'lastName': 'Pérez'},
       {'id': '2', 'firstName': 'María', 'lastName': 'García'},
@@ -953,29 +1022,55 @@ class _BookingsViewState extends State<BookingsView> {
       context: context,
       booking: booking,
       availableTeachers: availableTeachers,
-      aulaCapacity: 10, // Mock capacity
+      aulaCapacity: 10,
     );
 
-    // Si se guardaron cambios, actualizar la lista
+    // Si se guardaron cambios, actualizar en el backend
     if (updatedBooking != null && mounted) {
-      setState(() {
-        final index = _bookings.indexWhere((b) => b.id == booking.id);
-        if (index != -1) {
-          _bookings[index] = updatedBooking;
-        }
-      });
-
+      final response = await _bookingService.updateBooking(
+        id: booking.id,
+        subject: updatedBooking.subject,
+        career: updatedBooking.career,
+        parallel: updatedBooking.parallel,
+        cycle: updatedBooking.cycle,
+        numStudents: updatedBooking.numStudents,
+      );
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.read<LocaleProvider>().isSpanish 
-                  ? 'Reserva actualizada exitosamente'
-                  : 'Booking updated successfully',
+        if (response.isSuccess) {
+          // Recargar desde el servidor
+          await _refreshBookings();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.read<LocaleProvider>().isSpanish 
+                    ? 'Reserva actualizada exitosamente'
+                    : 'Booking updated successfully',
+              ),
+              backgroundColor: AppColors.success,
             ),
-            backgroundColor: AppColors.success,
-          ),
-        );
+          );
+        } else {
+          // Fallback: actualizar localmente
+          setState(() {
+            final index = _bookings.indexWhere((b) => b.id == booking.id);
+            if (index != -1) {
+              _bookings[index] = updatedBooking;
+            }
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.read<LocaleProvider>().isSpanish 
+                    ? 'Reserva actualizada (modo offline)'
+                    : 'Booking updated (offline mode)',
+              ),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
       }
     }
   }
@@ -984,35 +1079,59 @@ class _BookingsViewState extends State<BookingsView> {
     final cancelledBooking = await CancelBookingModal.show(
       context: context,
       booking: booking,
-      cancelledByName: 'Admin Sistema', // En producción vendría del auth
+      cancelledByName: 'Admin Sistema',
     );
     
     if (cancelledBooking != null && mounted) {
-      setState(() {
-        final index = _bookings.indexWhere((b) => b.id == booking.id);
-        if (index != -1) {
-          _bookings[index] = cancelledBooking;
-        }
-        _selectedBookings.remove(booking.id);
-      });
+      // Intentar cancelar en el backend
+      final response = await _bookingService.cancelBooking(
+        booking.id,
+        reason: cancelledBooking.cancellationReason,
+      );
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(LucideIcons.circleCheck, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  context.read<LocaleProvider>().isSpanish 
-                      ? 'Reserva cancelada exitosamente'
-                      : 'Booking cancelled successfully',
-                ),
-              ],
+        if (response.isSuccess) {
+          // Recargar desde el servidor para tener datos actualizados
+          await _refreshBookings();
+          _selectedBookings.remove(booking.id);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(LucideIcons.circleCheck, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    context.read<LocaleProvider>().isSpanish 
+                        ? 'Reserva cancelada exitosamente'
+                        : 'Booking cancelled successfully',
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.success,
             ),
-            backgroundColor: AppColors.success,
-          ),
-        );
+          );
+        } else {
+          // Si falla la API, actualizar localmente como fallback
+          setState(() {
+            final index = _bookings.indexWhere((b) => b.id == booking.id);
+            if (index != -1) {
+              _bookings[index] = cancelledBooking;
+            }
+            _selectedBookings.remove(booking.id);
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.read<LocaleProvider>().isSpanish 
+                    ? 'Reserva cancelada (modo offline)'
+                    : 'Booking cancelled (offline mode)',
+              ),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
       }
     }
   }
@@ -1045,16 +1164,17 @@ class _BookingsViewState extends State<BookingsView> {
           );
           
           if (cancelledBooking != null && mounted) {
-            setState(() {
-              final index = _bookings.indexWhere((b) => b.id == bookingId);
-              if (index != -1) {
-                _bookings[index] = cancelledBooking;
-              }
-            });
+            // Intentar cancelar en el backend
+            await _bookingService.cancelBooking(
+              bookingId,
+              reason: cancelledBooking.cancellationReason,
+            );
           }
         }
       }
       
+      // Recargar todas las reservas
+      await _refreshBookings();
       setState(() => _selectedBookings.clear());
     }
   }
